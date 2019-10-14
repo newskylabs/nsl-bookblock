@@ -95,7 +95,7 @@ Examples:
 
 # Color, more pages than existing:
 
-./nsl-bookblock block \\
+nsl-bookblock block \\
   --debug \\
   --source-dir         ~/home/tmp/the-secret-garden/png \\
   --target-dir         ~/home/tmp/pages \\
@@ -109,7 +109,7 @@ Examples:
 
 # Color, only existing pages:
 
-./nsl-bookblock block \\
+nsl-bookblock block \\
   --debug \\
   --source-dir         ~/home/tmp/the-secret-garden/png \\
   --target-dir         ~/home/tmp/pages \\
@@ -124,7 +124,7 @@ Examples:
 # Color, only required pages, 
 # skipping most of them in the middle:
 
-./nsl-bookblock block \\
+nsl-bookblock block \\
   --debug \\
   --source-dir         ~/home/tmp/the-secret-garden/png \\
   --target-dir         ~/home/tmp/pages \\
@@ -139,7 +139,7 @@ Examples:
 # Black and white, all required pages:
 # final version
 
-./nsl-bookblock block \\
+nsl-bookblock block \\
   --source-dir         ~/home/tmp/the-secret-garden/png \\
   --target-dir         ~/home/tmp/pages \\
   --source-file-format the-secret-garden.%02d.png \\
@@ -165,7 +165,7 @@ The following commands are defined:
 
 Examples:
 
-./nsl-bookblock block --help
+nsl-bookblock block --help
 """
 
     print(error_msg, file=sys.stderr)
@@ -1325,7 +1325,8 @@ def bookblock_main(args):
 ## main
 ## ---------------------------------------------------------
 
-def main():
+def bookblock():
+
 
     # When no command has been given
     if len(sys.argv) < 2:
@@ -1351,11 +1352,11 @@ def main():
         sys.exit(-1)
 
 ## =========================================================
-## when executed as script
+## When executed as script
 ## ---------------------------------------------------------
-
+ 
 if __name__ == '__main__':
-    main()
+    bookblock()
 
 ## =========================================================
 ## =========================================================
