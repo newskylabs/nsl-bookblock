@@ -1,3 +1,23 @@
+# -*- mode: gitignore; -*- =================================
+## 
+## .gitignore file
+## ---------------------------------------------------------
+
+## Ignore most point files:
+.*
+
+## But commit .gitignore:
+!.gitignore
+
+## Tarballs:
+*.tar
+*.gz
+
+# Ignore emacs temporary files
+*~
+\#*\#
+.\#*
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
