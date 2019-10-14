@@ -87,7 +87,7 @@ setuptools.setup(
     url=__url__,
     entry_points={
         'console_scripts': [
-            'nsl-bookblock = newskylabs.tools.bookblock.__main__:bookblock',
+            'bookblock = newskylabs.tools.bookblock.__main__:bookblock',
         ]
     },
     keywords='deep learning, dataset generation, scan postprocessing, bookblock.',

@@ -2,23 +2,23 @@
 ## =========================================================
 ##                    Dietrich Bollmann, Luebeck, 2019/10/11
 ## 
-## nsl-bookblock
+## bookblock
 ## 
 ## Cutting pages from book scans...
 ## ---------------------------------------------------------
 
-'''* nsl-bookblock - A tool to cut out pages from a scanned book.
+'''* bookblock - A tool to cut out pages from a scanned book.
 
 ** Description
 
-nsl-bookblock is a tool to cut out pages from a scanned book.
+bookblock is a tool to cut out pages from a scanned book.
 
 When scanning a book each scan contains two book pages.  The book
 cover on the other side in often consists out of two scans of half the
 size showing only the front or back cover.  Further in most cases some
 pages might be blanc or not interesting and should be ignored.
 
-nsl-bookblock allowes to specify the size and offset of a page
+bookblock allowes to specify the size and offset of a page
 bounding box and a specification of the pages which should be
 extracted.  The pages then can be previewed and finally cut out of the
 scan and saved to disk.
@@ -42,9 +42,9 @@ def usage(command=None):
 
     if command == 'block':
         ## =====================================
-        ## nsl-bookblock block
+        ## bookblock block
         ## -------------------------------------
-        error_msg = """nsl-bookblock block - bla bla bla...
+        error_msg = """bookblock block - bla bla bla...
 
 A simple python template :)
 
@@ -73,7 +73,7 @@ Examples:
 
 # Color, more pages than existing:
 
-nsl-bookblock block \\
+bookblock block \\
   --debug \\
   --source-dir         ~/home/tmp/the-secret-garden/png \\
   --target-dir         ~/home/tmp/pages \\
@@ -87,7 +87,7 @@ nsl-bookblock block \\
 
 # Color, only existing pages:
 
-nsl-bookblock block \\
+bookblock block \\
   --debug \\
   --source-dir         ~/home/tmp/the-secret-garden/png \\
   --target-dir         ~/home/tmp/pages \\
@@ -102,7 +102,7 @@ nsl-bookblock block \\
 # Color, only required pages, 
 # skipping most of them in the middle:
 
-nsl-bookblock block \\
+bookblock block \\
   --debug \\
   --source-dir         ~/home/tmp/the-secret-garden/png \\
   --target-dir         ~/home/tmp/pages \\
@@ -117,7 +117,7 @@ nsl-bookblock block \\
 # Black and white, all required pages:
 # final version
 
-nsl-bookblock block \\
+bookblock block \\
   --source-dir         ~/home/tmp/the-secret-garden/png \\
   --target-dir         ~/home/tmp/pages \\
   --source-file-format the-secret-garden.%02d.png \\
@@ -131,11 +131,11 @@ nsl-bookblock block \\
 """
     else:
         ## =====================================
-        ## nsl-bookblock - no or undefined command
+        ## bookblock - no or undefined command
         ## -------------------------------------
-        error_msg = """nsl-bookblock -- cut scanned pages
+        error_msg = """bookblock -- cut scanned pages
 
-Usage: nsl-bookblock <command> [<arguments> ...]
+Usage: bookblock <command> [<arguments> ...]
 
 The following commands are defined:
 
@@ -143,7 +143,7 @@ The following commands are defined:
 
 Examples:
 
-nsl-bookblock block --help
+bookblock block --help
 """
 
     print(error_msg, file=sys.stderr)
