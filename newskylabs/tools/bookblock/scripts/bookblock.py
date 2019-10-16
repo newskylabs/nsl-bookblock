@@ -155,8 +155,8 @@ bookblock block --help
 def bookblock_main(args):
 
     try:
-        opts, args = getopt.getopt(args, "hdi:o:s:t:g:p:m:c:v:",
-                                   ["help", "debug", 
+        opts, args = getopt.getopt(args, "hdVi:o:s:t:g:p:m:c:v:",
+                                   ["help", "debug", "version",
                                     "source-dir=", "target-dir=", 
                                     "source-file-format=", "target-file-format=",
                                     "geometry=",
@@ -189,6 +189,10 @@ def bookblock_main(args):
         elif o in ('-d', '--debug'):
             debug("Debug mode on!")
             settings.set_debug_mode(debug)
+
+        elif o in ('-V', '--version'):
+            from newskylabs.tools.bookblock.utils.generic import get_version
+            print('bookblock version {}'.format(get_version()))
 
         elif o in ('-i', '--source-dir'):
             source_dir = a
