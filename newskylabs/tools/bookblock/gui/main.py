@@ -17,10 +17,11 @@ __date__        = "2019/10/14"
 ## ---------------------------------------------------------
 
 # General Python libs
-import sys
-import re
+import sys, os, re, logging
 from copy import deepcopy
 from pathlib import Path, PosixPath
+from os.path import dirname
+from time import strftime
 
 # Numpy
 import numpy as np
@@ -33,7 +34,7 @@ import kivy
 kivy.require('1.11.1')
 
 from kivy.app import App
-from kivy.logger import Logger
+from kivy.logger import Logger, LOG_LEVELS, FileHandler
 from kivy.config import Config
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.button import Button
@@ -498,9 +499,9 @@ class Page:
         # Ensure that the scan file exists
         if not Path(scan_path).exists():
             # No file has been found 
-            # print an ERROR and return False
-            print("WARNING File not found: {}".format(scan_path), file=sys.stderr)
-            return False
+            # print an ERROR and exit
+            print("ERROR File not found: {}".format(scan_path), file=sys.stderr)
+            sys.exit(2)
 
         # Select image mode
         if image_mode == 'color':
@@ -596,6 +597,10 @@ class Page:
         # Load the scan
         scan = self.load_scan(page_spec)
 
+        # When the scan has not been found return False
+        if not isinstance(scan, (str, np.ndarray)):
+            return None
+
         # Get the size of the scan
         scan_size = scan.shape[:2]
 
@@ -638,6 +643,10 @@ class Page:
             
         # Load the scan
         scan = self.load_scan(page_spec)
+
+        # When the scan has not been found return False
+        if not isinstance(scan, (str, np.ndarray)):
+            return False
 
         # Get the size of the scan
         scan_size = scan.shape[:2]
@@ -686,6 +695,10 @@ class Page:
             print("")
 
         page = self.get_page(page_spec)
+
+        # When the page has not been found return False
+        if not isinstance(page, (str, np.ndarray)):
+            return False
 
         # Ensure that the page directory exists
         page_dir = PosixPath(page_path).parent
@@ -890,6 +903,9 @@ class BookBlock:
 class BookBlockApp(App):
 
     def __init__(self, settings):
+
+
+        
         self._settings = settings
 
         # Book block image server
@@ -901,17 +917,47 @@ class BookBlockApp(App):
         if self._settings.get_debug_mode():
             print("DEBUG [BookBlockApp] {}".format(message))
 
+    def get_create_config_dir(self):
+        """
+        Return the config dir.  If it does not exist, create it.
+        """
+        # Config dir 
+        application_name = self.get_application_name().lower()
+        config_dir_name = '~/.{}'.format(application_name)
+        config_dir = Path(config_dir_name).expanduser()
+
+        # Ensure that config directory exists
+        if not config_dir.exists():
+            self.debug("Creating config directlry: {}".format(config_dir_name))
+            config_dir.mkdir(parents=True, exist_ok=True)
+
+        # Return config dir
+        return config_dir_name
+
     def get_application_config(self):
         """
         ~/.BookBlocks.ini
         """
-        return super(BookBlockApp, self).get_application_config(
-            '~/.{}'.format(self.get_application_name().lower()))
+        # Ensure that config directory exists
+        config_dir = self.get_create_config_dir()
+
+        # Config dir 
+        application_config_file = '{}/config.ini'.format(str(config_dir))
+
+        return super(BookBlockApp, self)\
+            .get_application_config(application_config_file)
 
     def build_config(self, config):
-        config.setdefaults('section1', {
-            'key1': 'value1',
-            'key2': '42',
+
+        application_name = self.get_application_name().lower()
+        application_name_lower = application_name.lower()
+
+        # Ensure that config directory exists
+        config_dir = self.get_create_config_dir()
+        log_dir = '{}/{}'.format(config_dir, 'logs')
+        log_file_name = '{}_log_%y-%m-%d_%_.txt'.format(application_name_lower)
+        
+        config.setdefaults('gui', {
             'width': 1200,
             'height': 800
         })
@@ -920,8 +966,8 @@ class BookBlockApp(App):
 
         # Set initial window size
         config = self.config
-        Config.set('graphics', 'width',  config.getint('section1', 'width'))
-        Config.set('graphics', 'height', config.getint('section1', 'height'))
+        Config.set('graphics', 'width',  config.getint('gui', 'width'))
+        Config.set('graphics', 'height', config.getint('gui', 'height'))
 
         # Build the GUI
         return self.build_GUI()
@@ -1023,14 +1069,19 @@ class BookBlockApp(App):
 
     def redraw_image(self):
         img_path = self._image_server.get_current_page()
+
+        # Do nothing - when the current page has not been found
+        if not isinstance(img_path, (str, np.ndarray)):
+            return None
+        
         self.update_button_states()
         self._image_viewer.set_image(img_path)
 
     def show_image(self, image):
 
         # When no file has been found do nothing
-        if isinstance(image, bool) and image == False:
-            return
+        if not isinstance(image, (str, np.ndarray)):
+            return None
 
         self._image_viewer.set_image(image)
 
