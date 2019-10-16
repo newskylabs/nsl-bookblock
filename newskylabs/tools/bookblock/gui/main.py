@@ -957,12 +957,117 @@ class BookBlockApp(App):
         log_dir = '{}/{}'.format(config_dir, 'logs')
         log_file_name = '{}_log_%y-%m-%d_%_.txt'.format(application_name_lower)
         
+        config.setdefaults('logger', {
+            'log_level':    'warning',
+            'log_enable':   1,
+            'log_dir':      log_dir,
+            'log_name':     log_file_name,
+            #| 'log_maxfiles': 10,
+        })
+
         config.setdefaults('gui', {
             'width': 1200,
             'height': 800
         })
 
+    def init_logger(self):
+
+        # Store log messages until logger is configured
+        log_messages = []
+
+        # Init log level from ~/.bookblock or the defaults
+        config = self.config
+        log_dir    = config.get('logger', 'log_dir')
+        log_name   = config.get('logger', 'log_name')
+        log_level  = LOG_LEVELS.get(config.get('logger', 'log_level'))
+        log_enable = config.getint('logger', 'log_enable')
+        #| log_maxfiles = config.getint('logger', 'log_maxfiles')
+
+        # Ensure that log directory exists
+        log_dir_path = PosixPath(log_dir).expanduser()
+        print("log_dir_path:", log_dir_path)
+        if not Path(log_dir_path).exists():
+            log_messages.append("Creating log directory: {}".format(log_dir))
+            log_dir_path.mkdir(parents=True, exist_ok=True)
+
+        # Substitute the log file name format patterns with actual values
+        # %y -> year, %m -> month, %d -> day, %_ -> next log file number
+        log_file = log_name.replace('%_', '@@NUMBER@@')
+        log_file = strftime(log_file)
+        log_file = '{}/{}'.format(str(log_dir_path), log_file)
+        n = 0
+        while True:
+            log_file2 = log_file.replace('@@NUMBER@@', str(n))
+            if not os.path.exists(log_file2):
+                log_file = log_file2
+                break
+            n += 1
+            if n > 10000:  # prevent maybe flooding ?
+                raise Exception('Too many logfile, remove them')
+            
+        # Open log file
+        # and substitue it for the kivy log file (~/kivy/logs/...
+        FileHandler.filename = str(log_file)
+        if FileHandler.fd is not None:
+            FileHandler.fd.close()
+        FileHandler.fd = open(log_file, 'w')
+        log_messages.append('Logger: Record log in %s' % log_file)
+
+        # Set log level
+        Logger.setLevel(log_level)
+
+        # En- / Disable logger
+        Logger.logfile_activated = bool(log_enable)
+
+        # TODO Purge old logs
+        # See site-packages/kivy/logger.py, class FileHandler, method purge_logs() 
+        # for an example of how to purge old logs.
+
+        # Log stored log messages
+        for msg in log_messages:
+            Logger.info(msg)
+            
+        # Log some general information about Python, Kivy etc.
+        
+        # Kivys default logging level is info
+        # In order to suppress the initial INFO messages printed when kivy is loaded
+        # until the log level for `bookblock' is set
+        # I set the level to WARNING by in file ~/.kivy/config.ini
+        # > [kivy]
+        # > #log_level = info
+        # > log_level = warning
+        # Some of the suppressed information is printed now
+        # when the bookblock log level is lower or equal to INFO
+
+        Logger.info('Kivy: v%s' % kivy.__version__)
+        Logger.info('Kivy: Installed at "{}"'.format(kivy.__file__))
+        Logger.info('Python: v{}'.format(sys.version))
+        Logger.info('Python: Interpreter at "{}"'.format(sys.executable))
+        Logger.info('Bookblock: Installed at "{}"'.format(dirname(dirname(__file__))))
+        Logger.info('Bookblock: To avoid the Kivy startup INFO messages '
+                    'change the kivy log level to WARNING '
+                    'in ~/.kivy/config.ini')
+        Logger.info('Bookblock: To avoid further messages from Bookblock '
+                    'adapt the Bookblock log level in '
+                    'in ~/.bookblock')
+        Logger.info('Bookblock: For more debug information '
+                    'change the kivy log level in ~/.kivy/config.ini '
+                    'and the Bookblock log level in ~/.bookblock/config.ini '
+                    'to TRACE, DEBUG, or INFO.')
+
+        # Example log messages
+        # Log levels: trace, debug, info, warning, error, critical
+        #| Logger.trace('Title: This is a trace message.')
+        #| Logger.debug('Title: This is a debug message.')
+        #| Logger.info('Title: This is an info message.')
+        #| Logger.warning('Title: This is a warning message.')
+        #| Logger.error('Title: This is an error message.')
+        #| Logger.critical('Title: This is a critical message.')
+    
     def build(self):
+
+        # Init the logger
+        self.init_logger()
 
         # Set initial window size
         config = self.config
