@@ -1,6 +1,6 @@
 """newskylabs/tools/bookblock/gui/main.py:
 
-The GUI of the nsl-bookblock tool.
+The GUI of the bookblock tool.
 
 """
 
@@ -13,7 +13,7 @@ __date__        = "2019/10/14"
 #| import ...
 
 ## =========================================================
-## nsl-bookblock GUI
+## bookblock GUI
 ## ---------------------------------------------------------
 
 # General Python libs

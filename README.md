@@ -1,5 +1,5 @@
 
-# nsl-bookblock
+# bookblock
 
 Cutting pages from book scans...
 

@@ -16,7 +16,7 @@
 
 """setup.py:
 
-Setup file of the nsl-bookblock tool.
+Setup file of the bookblock tool.
 
 """
 

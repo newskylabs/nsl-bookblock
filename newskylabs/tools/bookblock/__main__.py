@@ -1,6 +1,6 @@
 """newskylabs/tools/bookblock/__main__.py:
 
-Main entry point for the `nsl-bookblock` tool.
+Main entry point for the `bookblock` tool.
 
 """
 

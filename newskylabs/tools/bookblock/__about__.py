@@ -34,7 +34,7 @@ __all__ = [
     '__date__',
 ]
 
-__package_name__ = 'nsl-bookblock'
+__package_name__ = 'bookblock'
 __version__      = '0.0.1.dev1'
 __status__       = 'Development'
 __description__  = 'NewSkyLabs Python project {}'.format(__package_name__)
