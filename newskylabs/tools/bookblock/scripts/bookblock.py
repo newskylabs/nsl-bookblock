@@ -2,6 +2,22 @@
 
 Main of bookblock tool.
 
+Description
+
+bookblock - A tool to cut out pages from a scanned book.
+
+bookblock is a tool to cut out pages from a scanned book.
+
+When scanning a book each scan contains two book pages.  The book
+cover on the other side in often consists out of two scans of half the
+size showing only the front or back cover.  Further in most cases some
+pages might be blanc or not interesting and should be ignored.
+
+bookblock allowes to specify the size and offset of a page
+bounding box and a specification of the pages which should be
+extracted.  The pages then can be previewed and finally cut out of the
+scan and saved to disk.
+
 """
 
 __author__      = "Dietrich Bollmann"
