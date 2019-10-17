@@ -23,71 +23,73 @@ class Settings:
 
         # Defaults
         self._debug_level        = None
-        self._mode               = 'bb'
-        self._image_mode         = 'color'
-        self._view_mode          = 'scan'
-        self._source_dir         = '/tmp'
-        self._target_dir         = '/tmp'
-        self._source_file_format = 'scan%03d.png'
-        self._target_file_format = 'page%03d.png'
-        self._geometry           = '600x800+10+20'
-        self._pages              = '0l'
+        self._image_mode         = None
+        self._view_mode          = None
+        self._source_dir         = None
+        self._target_dir         = None
+        self._source_file_format = None
+        self._target_file_format = None
+        self._geometry           = None
+        self._pages              = None
 
     def print_settings(self):
 
         print("")
         print("Settings:")
         print("")
-        print("  - mode:               ", self._mode)
-        print("  - image mode:         ", self._image_mode)
-        print("  - view mode:          ", self._view_mode)        
         print("  - source_dir:         ", self._source_dir)
         print("  - target_dir:         ", self._target_dir)
         print("  - source_file_format: ", self._source_file_format)
         print("  - target_file_format: ", self._target_file_format)
-        print("  - geometry:           ", self._geometry)
         print("  - pages:              ", self._pages)
+        print("  - geometry:           ", self._geometry)
+        print("  - image mode:         ", self._image_mode)
+        print("  - view mode:          ", self._view_mode)        
+        print("  - debug_level:        ", self._debug_level)
         print("")
 
     ## Setters
 
     def set_debug_level(self, debug_level):
         self._debug_level = debug_level
-
-    def set_mode(self, mode):
-        self._mode = mode
+        return self
 
     def set_image_mode(self, image_mode):
         self._image_mode = image_mode
+        return self
 
     def set_view_mode(self, view_mode):
         self._view_mode = view_mode
+        return self
 
     def set_source_dir(self, source_dir):
         self._source_dir = source_dir
+        return self
 
     def set_target_dir(self, target_dir):
         self._target_dir = target_dir
+        return self
 
     def set_source_file_format(self, source_file_format):
         self._source_file_format = source_file_format
+        return self
 
     def set_target_file_format(self, target_file_format):
         self._target_file_format = target_file_format
+        return self
 
     def set_geometry(self, geometry):
         self._geometry = geometry
+        return self
 
     def set_pages(self, pages):
         self._pages = pages
+        return self
 
     ## Getters
 
     def get_debug_level(self):
         return self._debug_level
-
-    def get_mode(self):
-        return self._mode
 
     def get_image_mode(self):
         return self._image_mode

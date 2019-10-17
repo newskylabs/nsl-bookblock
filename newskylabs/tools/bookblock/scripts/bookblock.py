@@ -1,243 +1,185 @@
-#!/usr/bin/env python
-## =========================================================
-##                    Dietrich Bollmann, Luebeck, 2019/10/11
-## 
-## bookblock
-## 
-## Cutting pages from book scans...
-## ---------------------------------------------------------
+"""newskylabs/tools/bookblock/scripts/bookblock.py:
 
-'''* bookblock - A tool to cut out pages from a scanned book.
-
-** Description
-
-bookblock is a tool to cut out pages from a scanned book.
-
-When scanning a book each scan contains two book pages.  The book
-cover on the other side in often consists out of two scans of half the
-size showing only the front or back cover.  Further in most cases some
-pages might be blanc or not interesting and should be ignored.
-
-bookblock allowes to specify the size and offset of a page
-bounding box and a specification of the pages which should be
-extracted.  The pages then can be previewed and finally cut out of the
-scan and saved to disk.
-
-** Usage
-
-TODO
-
-'''
-
-import sys
-import getopt
-
-from newskylabs.tools.bookblock.gui.main import Settings, BookBlockApp
-
-## =========================================================
-## usage
-## ---------------------------------------------------------
-
-def usage(command=None):
-
-    if command == 'block':
-        ## =====================================
-        ## bookblock block
-        ## -------------------------------------
-        error_msg = """bookblock block - bla bla bla...
-
-A simple python template :)
-
-options:
-
-  -h, --help                           - Print this help text.
-  -m, --mode                           - View mode - one of: raw, bb, page
-                                         raw  - The scan;
-                                         bb   - The scan with bounding box;
-                                         page - The page extracted from the scan 
-                                                corresponding to the bounding box.
-  -d, --debug <log-level>              - Set log level / debug mode.
-                                         Log levels: trace, debug, info, warning, error, critical
-  -i, --source-dir                     - Directory where the scans are stored.
-  -o, --target-dir                     - Directory where the cutted pages 
-                                         should be stored.
-  -s, --source-file-format <format>    - File name format of the scans.
-  -t, --target-file-format <format>    - File name format for the pages.
-  -g, --geometry           <geometry>  - Geometry of the page bounding box.
-  -p, --pages                          - Specification for the pages to be 
-                                         cut out.
-  -c, --image-mode                     - Image mode - one of: color, grayscale
-  -v, --view-mode                      - View mode - one of: page, scan
-
-Examples:
-
-# Color, more pages than existing:
-
-bookblock block \\
-  --debug              warning \\
-  --source-dir         ~/home/tmp/the-secret-garden/png \\
-  --target-dir         ~/home/tmp/pages \\
-  --source-file-format the-secret-garden.%02d.png \\
-  --target-file-format page%02d.png \\
-  --geometry           1000x1600+22+41 \\
-  --pages              0-100lr \\
-  --mode               bb \\
-  --image-mode         color \\
-  --view-mode          scan
-
-# Color, only existing pages:
-
-bookblock block \\
-  --debug              warning \\
-  --source-dir         ~/home/tmp/the-secret-garden/png \\
-  --target-dir         ~/home/tmp/pages \\
-  --source-file-format the-secret-garden.%02d.png \\
-  --target-file-format page%02d.png \\
-  --geometry           1000x1600+22+41 \\
-  --pages              0-1l,2-56lr \\
-  --mode               bb \\
-  --image-mode         color \\
-  --view-mode          scan
-
-# Color, only required pages, 
-# skipping most of them in the middle:
-
-bookblock block \\
-  --debug              warning \\
-  --source-dir         ~/home/tmp/the-secret-garden/png \\
-  --target-dir         ~/home/tmp/pages \\
-  --source-file-format the-secret-garden.%02d.png \\
-  --target-file-format page%02d.png \\
-  --geometry           1000x1600+22+41 \\
-  --pages              0-1l,2r,6r,7r,8-9lr,45-46lr \\
-  --mode               bb \\
-  --image-mode         color \\
-  --view-mode          scan
-
-# Black and white, all required pages:
-# final version
-
-bookblock block \\
-  --source-dir         ~/home/tmp/the-secret-garden/png \\
-  --target-dir         ~/home/tmp/pages \\
-  --source-file-format the-secret-garden.%02d.png \\
-  --target-file-format page%02d.png \\
-  --geometry           1000x1600+22+41 \\
-  --pages              0-1l,2r,6r,7r,8-46lr \\
-  --mode               bb \\
-  --image-mode         grayscale \\
-  --view-mode          scan
+Main of bookblock tool.
 
 """
-    else:
-        ## =====================================
-        ## bookblock - no or undefined command
-        ## -------------------------------------
-        error_msg = """bookblock -- cut scanned pages
 
-Usage: bookblock <command> [<arguments> ...]
+__author__      = "Dietrich Bollmann"
+__email__       = "dietrich@formgames.org"
+__copyright__   = "Copyright 2019 Dietrich Bollmann"
+__license__     = "Apache License 2.0, http://www.apache.org/licenses/LICENSE-2.0"
+__date__        = "2019/10/17"
 
-The following commands are defined:
+import sys, os, click
 
-  block - Cut out a "book block"
+from newskylabs.tools.bookblock.utils.settings import Settings
+from newskylabs.tools.bookblock.utils.generic import get_version_long
 
-Examples:
+# -i, --source-dir
+option_source_dir_help = "Directory where the scans are stored."
+option_source_dir_default = "/tmp"
 
-bookblock block --help
-"""
+# -o, --target-dir
+option_target_dir_help = "Directory where the pages should be stored."
+option_target_dir_default = "/tmp"
 
-    print(error_msg, file=sys.stderr)
+# -i, --source-file_format
+option_source_file_format_help = "File name format of the scans."
+option_source_file_format_default = 'scan%03d.png'
 
-## =========================================================
-## bookblock_main()
-## ---------------------------------------------------------
+# -o, --target-file_format
+option_target_file_format_help = "File name format for the pages."
+option_target_file_format_default = 'page%03d.png'
 
-def bookblock_main(args):
+# -p, --pages
+option_pages_help = "Specification of the pages to be cut out."
+option_pages_default = '1r,2-9lr,10l'
 
-    try:
-        opts, args = getopt.getopt(args, "hd:Vi:o:s:t:g:p:m:c:v:",
-                                   ["help", "debug=", "version",
-                                    "source-dir=", "target-dir=", 
-                                    "source-file-format=", "target-file-format=",
-                                    "geometry=",
-                                    "pages=",
-                                    "mode=",
-                                    "image-mode=",
-                                    "view-mode="
-                                   ])
-        
-    except getopt.GetoptError as err:
-        # print help information and exit:
-        print(str(err)) # will print something like "option -a not recognized"
-        usage(command='block')
+# -g, --geometry
+option_geometry_help = "Geometry of the pages."
+option_geometry_default = '600x800+10+20'
 
-        sys.exit(2)
+# -c, --image-mode
+option_image_mode_help = "Should I generate color or grayscale images?"
+option_image_mode_choice = ['color', 'grayscale']
+option_image_mode_default = 'color'
+
+# -v, --view-mode
+option_view_mode_help = "View mode: " + \
+    "either show the scan with a bounding box marking the page - " + \
+    "or the resulting page."
+option_view_mode_choice = ['scan', 'page']
+option_view_mode_default = 'page'
+
+# -e, --examples
+option_examples_help = "Show some usage examples."
+option_examples_default = False
+
+# -d, --debug
+option_debug_help = "Set the log level."
+option_debug_choice = ['trace', 'debug', 'info', 'warning', 'error', 'critical']
+option_debug_default = 'warning'
+
+command_context_settings={'help_option_names': ['-h', '--help']}
+
+@click.command(context_settings=command_context_settings)
+
+@click.option('-i', '--source-dir',
+              type=click.Path(exists=True), 
+              default=option_source_dir_default,
+              help=option_source_dir_help)
+
+@click.option('-o', '--target-dir',
+              type=click.Path(exists=True), 
+              default=option_target_dir_default,
+              help=option_target_dir_help)
+
+@click.option('-s', '--source-file-format', 
+              default=option_source_file_format_default,
+              help=option_source_file_format_help)
+
+@click.option('-t', '--target-file-format',
+              default=option_target_file_format_default,
+              help=option_target_file_format_help)
+  
+@click.option('-p', '--pages',
+              default=option_pages_default,
+              help=option_pages_help)
+  
+@click.option('-g', '--geometry',
+              default=option_geometry_default,
+              help=option_geometry_help)
+
+@click.option('-c', '--image-mode', 
+              type=click.Choice(option_image_mode_choice),
+              default=option_image_mode_default, 
+              help=option_image_mode_help)
+
+@click.option('-v', '--view-mode',
+              type=click.Choice(option_view_mode_choice),
+              default=option_view_mode_default, 
+              help=option_view_mode_help)
+
+@click.option('-e', '--examples',
+              is_flag=True,
+              default=option_examples_default,
+              help=option_examples_help)
+
+@click.option('-d', '--debug',
+              type=click.Choice(option_debug_choice),
+              default=option_debug_default,
+              help=option_debug_help)
+
+@click.version_option(get_version_long(), '-V', '--version')
+
+def bookblock(source_dir, target_dir, 
+              source_file_format, target_file_format,
+              pages,
+              geometry,
+              image_mode, 
+              view_mode,
+              examples, 
+              debug):
+    """Cut out pages from book scans.
+    """
+
+    if debug in ['trace', 'debug', 'info']:
+        print("DEBUG bookblock:")
+        print("")
+        print("  - source_dir:         {}".format(source_dir))
+        print("  - target_dir:         {}".format(target_dir))
+        print("  - source_file_format: {}".format(source_file_format))
+        print("  - target_file_format: {}".format(target_file_format))
+        print("  - pages:              {}".format(pages))
+        print("  - geometry:           {}".format(geometry))
+        print("  - image_mode:         {}".format(image_mode))
+        print("  - view_mode:          {}".format(view_mode))
+        print("  - examples:           {}".format(examples))
+        print("  - debug:              {}".format(debug))
+
+    # Show examples?
+    if examples:
+        print_examples()
+        exit()
 
     # Settings
-    settings = Settings()
-
-    # Global settings variable
-    global g_settings 
-    g_settings = settings
-
-    for o, a in opts:
-
-        if o in ('-h', '--help'):
-            usage(command='block')
-            sys.exit()
-
-        elif o in ('-d', '--debug'):
-            print("Debug mode on!", file=sys.stderr)
-            debug_leval = a
-            settings.set_debug_level(debug_leval)
-
-        elif o in ('-V', '--version'):
-            from newskylabs.tools.bookblock.utils.generic import get_version
-            print('bookblock version {}'.format(get_version()))
-
-        elif o in ('-i', '--source-dir'):
-            source_dir = a
-            settings.set_source_dir(source_dir)
-
-        elif o in ('-o', '--target-dir'):
-            target_dir = a
-            settings.set_target_dir(target_dir)
-
-        elif o in ('-s', '--source-file-format'):
-            source_file_format = a
-            settings.set_source_file_format(source_file_format)
-
-        elif o in ('-t', '--target-file-format'):
-            target_file_format = a
-            settings.set_target_file_format(target_file_format)
-
-        elif o in ('-g', '--geometry'):
-            geometry = a
-            settings.set_geometry(geometry)
-
-        elif o in ('-p', '--pages'):
-            pages = a
-            settings.set_pages(pages)
-
-        elif o in ('-m', '--mode'):
-            mode = a
-            settings.set_mode(mode)
-
-        elif o in ('-m', '--image-mode'):
-            image_mode = a
-            settings.set_image_mode(image_mode)
-
-        elif o in ('-v', '--view-mode'):
-            view_mode = a
-            settings.set_view_mode(view_mode)
-
-        else:
-            assert False, 'Unknown option: {}'.format(o)
+    settings = Settings() \
+        .set_debug_level(debug) \
+        .set_image_mode(image_mode) \
+        .set_view_mode(view_mode) \
+        .set_source_dir(source_dir) \
+        .set_target_dir(target_dir) \
+        .set_source_file_format(source_file_format) \
+        .set_target_file_format(target_file_format) \
+        .set_geometry(geometry) \
+        .set_pages(pages)
 
     # Print settings
     settings.print_settings()
-    
+
+    # Hack to silently import Kivy's noisy logger:
+    # The logger prints all kind of messages before the log level can be set
+    # and seems to ignore its config file log level settings as well
+    # (Kivy's config is at ~/.kivy/config.ini)
+    if not debug in ['trace', 'debug', 'info']:
+
+        # Silence stderr
+        orig_stderr = sys.stderr
+        sys.stderr = open(os.devnull, "w")
+
+        # Import Kivy's logger
+        from kivy.logger import Logger, LOG_LEVELS
+
+        # Set the log level
+        Logger.setLevel(level=LOG_LEVELS.get(debug))
+
+        # Restore stdout
+        sys.stderr = orig_stderr
+
     # Start the GUI
+    # For some reason BookBlockApp cannot be imported before
+    # as it seems to interfere with click
+    from newskylabs.tools.bookblock.gui.main import BookBlockApp
     app = BookBlockApp(settings)
     app.run()
 
@@ -246,45 +188,80 @@ def bookblock_main(args):
     print("Bye :)")
     print("")
     exit()
-            
+           
 ## =========================================================
-## main
-## ---------------------------------------------------------
-
-def bookblock():
-
-
-    # When no command has been given
-    if len(sys.argv) < 2:
-        usage()
-        sys.exit(-1)
-
-    # Extract command and arguments
-    command = sys.argv[1]
-    args = sys.argv[2:]
-
-    # Call the function corresponding to the given command
-    if command == 'block':
-        # Cut out a "book block":
-        # Cut out left and right pages
-        # from the specified list of copies
-        # using the given offset and page size.
-        bookblock_main(args)
-
-    else:
-        # Unknown command
-        print("ERROR Unknown command: {}".format(command), file=sys.stderr)
-        usage()
-        sys.exit(-1)
-
-## =========================================================
-## When executed as script
+## Main
 ## ---------------------------------------------------------
  
-if __name__ == '__main__':
-    bookblock()
+def print_examples():
+    """Print examples."""
+    print("""
+Examples:
+
+Generate color pages
+from the left and right side of scan 0 to 99:
+
+bookblock \\
+  --debug              trace \\
+  --source-dir         ~/home/tmp/the-secret-garden/png \\
+  --target-dir         ~/home/tmp/pages \\
+  --source-file-format the-secret-garden.%02d.png \\
+  --target-file-format page%02d.png \\
+  --geometry           1000x1600+22+41 \\
+  --pages              0-99lr \\
+  --image-mode         color \\
+  --view-mode          scan
+
+Generate color pages from
+the left sides of scan 0 and 1 and
+both sides of the scans 2 to 56:
+
+bookblock \\
+  --debug              info \\
+  --source-dir         ~/home/tmp/the-secret-garden/png \\
+  --target-dir         ~/home/tmp/pages \\
+  --source-file-format the-secret-garden.%02d.png \\
+  --target-file-format page%02d.png \\
+  --geometry           1000x1600+22+41 \\
+  --pages              0-1l,2-56lr \\
+  --image-mode         color \\
+  --view-mode          scan
+
+Generate color pages from
+the left sides of scan 0 and 1,
+the right sides of scan 2, 6 and 7,
+both sides of the scans 8 to 9 and
+both sides of the scans 45 to 46:
+
+bookblock \\
+  --debug              warning \\
+  --source-dir         ~/home/tmp/the-secret-garden/png \\
+  --target-dir         ~/home/tmp/pages \\
+  --source-file-format the-secret-garden.%02d.png \\
+  --target-file-format page%02d.png \\
+  --geometry           1000x1600+22+41 \\
+  --pages              0-1l,2r,6r,7r,8-9lr,45-46lr \\
+  --image-mode         color \\
+  --view-mode          scan
+
+Generate grayscale pages from
+the left sides of scan 0 and 1,
+the right sides of scan 2, 6 and 7,
+both sides of the scans 8 to 46:
+
+bookblock \\
+  --source-dir         ~/home/tmp/the-secret-garden/png \\
+  --target-dir         ~/home/tmp/pages \\
+  --source-file-format the-secret-garden.%02d.png \\
+  --target-file-format page%02d.png \\
+  --geometry           1000x1600+22+41 \\
+  --pages              0-1l,2r,6r,7r,8-46lr \\
+  --image-mode         grayscale \\
+  --view-mode          scan
+
+""")
 
 ## =========================================================
 ## =========================================================
 
-## fin
+## fin.
