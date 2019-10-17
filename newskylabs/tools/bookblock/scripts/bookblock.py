@@ -32,7 +32,7 @@ TODO
 import sys
 import getopt
 
-from newskylabs.tools.bookblock.gui.main import debug, Settings, BookBlockApp
+from newskylabs.tools.bookblock.gui.main import Settings, BookBlockApp
 
 ## =========================================================
 ## usage
@@ -56,8 +56,8 @@ options:
                                          bb   - The scan with bounding box;
                                          page - The page extracted from the scan 
                                                 corresponding to the bounding box.
-  -d, --debug                          - Debug mode.
-
+  -d, --debug <log-level>              - Set log level / debug mode.
+                                         Log levels: trace, debug, info, warning, error, critical
   -i, --source-dir                     - Directory where the scans are stored.
   -o, --target-dir                     - Directory where the cutted pages 
                                          should be stored.
@@ -74,7 +74,7 @@ Examples:
 # Color, more pages than existing:
 
 bookblock block \\
-  --debug \\
+  --debug              warning \\
   --source-dir         ~/home/tmp/the-secret-garden/png \\
   --target-dir         ~/home/tmp/pages \\
   --source-file-format the-secret-garden.%02d.png \\
@@ -88,7 +88,7 @@ bookblock block \\
 # Color, only existing pages:
 
 bookblock block \\
-  --debug \\
+  --debug              warning \\
   --source-dir         ~/home/tmp/the-secret-garden/png \\
   --target-dir         ~/home/tmp/pages \\
   --source-file-format the-secret-garden.%02d.png \\
@@ -103,7 +103,7 @@ bookblock block \\
 # skipping most of them in the middle:
 
 bookblock block \\
-  --debug \\
+  --debug              warning \\
   --source-dir         ~/home/tmp/the-secret-garden/png \\
   --target-dir         ~/home/tmp/pages \\
   --source-file-format the-secret-garden.%02d.png \\
@@ -155,8 +155,8 @@ bookblock block --help
 def bookblock_main(args):
 
     try:
-        opts, args = getopt.getopt(args, "hdVi:o:s:t:g:p:m:c:v:",
-                                   ["help", "debug", "version",
+        opts, args = getopt.getopt(args, "hd:Vi:o:s:t:g:p:m:c:v:",
+                                   ["help", "debug=", "version",
                                     "source-dir=", "target-dir=", 
                                     "source-file-format=", "target-file-format=",
                                     "geometry=",
@@ -187,8 +187,9 @@ def bookblock_main(args):
             sys.exit()
 
         elif o in ('-d', '--debug'):
-            debug("Debug mode on!")
-            settings.set_debug_mode(debug)
+            print("Debug mode on!", file=sys.stderr)
+            debug_leval = a
+            settings.set_debug_level(debug_leval)
 
         elif o in ('-V', '--version'):
             from newskylabs.tools.bookblock.utils.generic import get_version

@@ -46,27 +46,6 @@ from kivy.graphics.texture import Texture
 from newskylabs.tools.bookblock.utils.settings import Settings
 
 ## =========================================================
-## DEBUG
-## ---------------------------------------------------------
-
-g_settings = None
-
-## =========================================================
-## DEBUG and ERROR messages
-## ---------------------------------------------------------
-
-def debug(message):
-    if g_settings and g_settings.get_debug_mode():
-        print("DEBUG {}".format(message))
-
-def error(message):
-    print("ERROR {}".format(message), file=sys.stderr)
-    sys.exit(-1)
-
-def warning(message):
-    print("WARNING {}".format(message), file=sys.stderr)
-
-## =========================================================
 ## parse_geometry(geometry)
 ## ---------------------------------------------------------
 
@@ -90,10 +69,11 @@ def parse_geometry(geometry):
         return (width, height, offset_left, offset_top)
 
     else:
-        debug("DEBUG From page {} to page {} left side {} right side {}"\
+        Logger.debug("parse_geometry(): From page {} to page {} left side {} right side {}"\
               .format(from_page, to_page, left_side, right_side))
             
-        error("ERROR Malformed geometry: '{}'".format(geometry))
+        print("ERROR Malformed geometry: '{}'".format(geometry), file=sys.stderr)
+        exit(-1)
 
 ## =========================================================
 ## parse_page_spec(page_spec)
@@ -108,7 +88,7 @@ def parse_page_spec(page_spec):
     """
 
     # DEBUG
-    debug("page_spec: {}".format(page_spec))
+    Logger.debug("parse_page_spec(): page_spec: {}".format(page_spec))
 
     m = regexp_page_spec.match(page_spec)
 
@@ -120,8 +100,8 @@ def parse_page_spec(page_spec):
         right_side = m.group(5) == 'r'
 
         # DEBUG
-        debug("From page {} to page {} left side {} right side {}"\
-              .format(from_page, to_page, left_side, right_side))
+        Logger.debug("parse_page_spec(): From page {} to page {} left side {} right side {}"\
+                     .format(from_page, to_page, left_side, right_side))
 
         # Which scan pages should I treat?
         if to_page:
@@ -130,7 +110,7 @@ def parse_page_spec(page_spec):
             pages = range(from_page, from_page+1)
                 
         # DEBUG
-        debug("Pages: {}".format(list(pages)))
+        Logger.debug("parse_page_spec(): Pages: {}".format(list(pages)))
 
         # Which sides should I cut out?
         sides = []
@@ -140,13 +120,13 @@ def parse_page_spec(page_spec):
             sides.append('right')
 
         # DEBUG
-        debug("Sides: {}".format(sides))
+        Logger.debug("parse_page_spec(): Sides: {}".format(sides))
 
         return (pages, sides)
 
     else:
             
-        print("ERROR Malformed page spec: '{}'".format(page_spec))
+        print("ERROR Malformed page spec: '{}'".format(page_spec), file=sys.stderr)
         sys.exit(2)
 
 ## =========================================================
@@ -162,10 +142,6 @@ class Pages:
         
         # Generate the list of page specs
         self._init_page_list()
-
-    def debug(self, message):
-        if self._settings.get_debug_mode():
-            print("DEBUG [Pages] {}".format(message))
 
     def _init_page_list(self):
 
@@ -194,7 +170,7 @@ class Pages:
                     page += 1
                 
         ## DEBUG
-        self.debug("pages: {}".format(pages))
+        Logger.debug("Pages:pages: {}".format(pages))
 
         self._pages = pages
         self._num_pages = len(pages)
@@ -275,24 +251,25 @@ class Pages:
     def print_current_page(self):
         spec = self.get_current_page()
 
-        if self._settings.get_debug_mode():
-            print("DEBUG [Pages] Page {}:".format(spec['page']))
-            print("  - scan:      {}".format(spec['scan']))
-            print("  - side:      {}".format(spec['side']))
-            print("  - scan-dir:  {}".format(spec['scan-dir']))
-            print("  - scan-file: {}".format(spec['scan-file']))
-            print("  - scan-path: {}".format(spec['scan-path']))
-            print("  - page:      {}".format(spec['page']))
-            print("  - page-dir:  {}".format(spec['page-dir']))
-            print("  - page-file: {}".format(spec['page-file']))
-            print("  - page-path: {}".format(spec['page-path']))
-            print("")
+        msg = \
+            "Pages: Page {}:\n".format(spec['page']) + \
+            "  - scan:      {}\n".format(spec['scan']) + \
+            "  - side:      {}\n".format(spec['side']) + \
+            "  - scan-dir:  {}\n".format(spec['scan-dir']) + \
+            "  - scan-file: {}\n".format(spec['scan-file']) + \
+            "  - scan-path: {}\n".format(spec['scan-path']) + \
+            "  - page:      {}\n".format(spec['page']) + \
+            "  - page-dir:  {}\n".format(spec['page-dir']) + \
+            "  - page-file: {}\n".format(spec['page-file']) + \
+            "  - page-path: {}\n".format(spec['page-path']) + \
+            "\n"
+        Logger.debug(msg)
 
-        else:
-            print("Showing page {}  [scan {}, {} side]"\
-                  .format(spec['page'], 
-                          spec['scan'],
-                          spec['side']))
+        # Console message
+        print("Showing page {}  [scan {}, {} side]"\
+              .format(spec['page'], 
+                      spec['scan'],
+                      spec['side']))
 
 # TEST
 #| print("")
@@ -343,15 +320,11 @@ class Page:
     def __init__(self, settings):
         self._settings = settings
 
-    def debug(self, message):
-        if self._settings.get_debug_mode():
-            print("DEBUG [Page] {}".format(message))
-
     def get(self, page_spec):
 
         # Get the view mode
         view_mode = self._settings.get_view_mode()
-        self.debug("View mode: {}".format(view_mode))
+        Logger.debug("Page: View mode: {}".format(view_mode))
 
         # Depending on the view mode return one of:
         # - scan with bounding boxraw scan
@@ -359,17 +332,17 @@ class Page:
         # - scan as it is
         if view_mode == 'scan':
             page = self.get_scan_with_bounding_box(page_spec)
-            self.debug(">>> scan type(page): {}".format(type(page)))
+            Logger.debug("Page: scan type(page): {}".format(type(page)))
 
         elif view_mode == 'page':
             page = self.get_page(page_spec)
-            self.debug(">>> page type(page): {}".format(type(page)))
+            Logger.debug("Page: page type(page): {}".format(type(page)))
 
         else: # view_mode == 'raw':
             page = self.get_scan_raw(page_spec)
-            self.debug(">>> raw type(page): {}".format(type(page)))
+            Logger.debug("Page: raw type(page): {}".format(type(page)))
 
-        self.debug(">>> type(page): {}".format(type(page)))
+        Logger.debug("Pages: type(page): {}".format(type(page)))
         return page
         
     def get_scan_raw(self, page_spec):
@@ -387,13 +360,14 @@ class Page:
         scan_path = page_spec['scan-path']
 
         # Print settings
-        if self._settings.get_debug_mode():
-            print("DEBUG [Page] Loading Scanned page:")
-            print("")
-            print("  - scan:               ", scan)
-            print("  - image_mode:         ", image_mode)
-            print("  - source file:        ", scan_path)
-            print("")
+        msg = \
+            "DEBUG [Page] Loading Scanned page:\n" + \
+            "\n" + \
+            "  - scan:               {}\n".format(scan) + \
+            "  - image_mode:         {}\n".format(image_mode) + \
+            "  - source file:        {}\n".format(scan_path) + \
+            "\n"
+        Logger.debug(msg)
       
         # Ensure that the scan file exists
         if not Path(scan_path).exists():
@@ -437,13 +411,14 @@ class Page:
         geometry = self._settings.get_geometry()
 
         # Print settings
-        if self._settings.get_debug_mode():
-            print("DEBUG [Page] Calculating bounding box:")
-            print("")
-            print("  - scan size: ", scan_size)
-            print("  - side:      ", side)
-            print("  - geometry:  ", geometry)
-            print("")
+        msg = \
+            "DEBUG [Page] Calculating bounding box:\n" + \
+            "\n" + \
+            "  - scan size: {}\n".format(scan_size) + \
+            "  - side:      {}\n".format(side) + \
+            "  - geometry:  {}\n".format(geometry) + \
+            "\n"
+        Logger.debug(msg)
 
         # Size of scan
         scan_height, scan_width = scan_size
@@ -483,15 +458,16 @@ class Page:
         geometry           = self._settings.get_geometry()
 
         # Print settings
-        if self._settings.get_debug_mode():
-            print("DEBUG [Page] Draw bounding box on scanned page:")
-            print("")
-            print("  - scan:        ", scan)
-            print("  - side:        ", side)
-            print("  - page:        ", page)
-            print("  - source file: ", scan_path)
-            print("  - geometry:    ", geometry)
-            print("")
+        msg = \
+            "DEBUG [Page] Draw bounding box on scanned page:\n" + \
+            "\n" + \
+            "  - scan:        {}\n".format(scan) + \
+            "  - side:        {}\n".format(side) + \
+            "  - page:        {}\n".format(page) + \
+            "  - source file: {}\n".format(scan_path) + \
+            "  - geometry:    {}\n".format(geometry) + \
+            "\n"
+        Logger.debug(msg)
       
         # Load the scan
         scan = self.load_scan(page_spec)
@@ -530,15 +506,16 @@ class Page:
         geometry = self._settings.get_geometry()
 
         # Print settings
-        if self._settings.get_debug_mode():
-            print("DEBUG [Pages] Draw bounding box on scanned page:")
-            print("")
-            print("  - scan:        ", scan)
-            print("  - side:        ", side)
-            print("  - page:        ", page)
-            print("  - source file: ", scan_path)
-            print("  - geometry:    ", geometry)
-            print("")
+        msg = \
+            "DEBUG [Pages] Draw bounding box on scanned page:\n" + \
+            "\n" + \
+            "  - scan:        {}\n".format(scan) + \
+            "  - side:        {}\n".format(side) + \
+            "  - page:        {}\n".format(page) + \
+            "  - source file: {}\n".format(scan_path) + \
+            "  - geometry:    {}\n".format(geometry) + \
+            "\n"
+        Logger.debug(msg)
             
         # Load the scan
         scan = self.load_scan(page_spec)
@@ -562,7 +539,7 @@ class Page:
         h = y2 - y1 + 1
         
         # Cut out page
-        self.debug("Cutting out area: x: {}, y: {}, w: {}, h: {}".format(x, y, w, h))
+        Logger.debug("Page: Cutting out area: x: {}, y: {}, w: {}, h: {}".format(x, y, w, h))
         page = scan.copy()
         page = page[y:y+h, x:x+w]
 
@@ -583,15 +560,16 @@ class Page:
         page_path = page_spec['page-path']
 
         # Print settings
-        if self._settings.get_debug_mode():
-            print("DEBUG [Page] Store page:")
-            print("")
-            print("  - page:        ", page)
-            print("  - scan:        ", scan)
-            print("  - side:        ", side)
-            print("  - geometry:    ", geometry)
-            print("  - target file: ", page_path)
-            print("")
+        msg = \
+            "DEBUG [Page] Store page:\n" + \
+            "\n" + \
+            "  - page:        {}\n".format(page) + \
+            "  - scan:        {}\n".format(scan) + \
+            "  - side:        {}\n".format(side) + \
+            "  - geometry:    {}\n".format(geometry) + \
+            "  - target file: {}\n".format(page_path) + \
+            "\n"
+        Logger.debug(msg)
 
         page = self.get_page(page_spec)
 
@@ -602,11 +580,11 @@ class Page:
         # Ensure that the page directory exists
         page_dir = PosixPath(page_path).parent
         if not page_dir.exists():
-            self.debug("Creating page directory: {}".format(str(page_dir)))
+            Logger.debug("Pages: Creating page directory: {}".format(str(page_dir)))
             page_dir.mkdir(parents=True, exist_ok=True)
 
         # Save image
-        self.debug("Storing image: {}".format(page_path))
+        Logger.debug("Pages: Storing image: {}".format(page_path))
         cv2.imwrite(page_path, page)
 
 ## =========================================================
@@ -730,38 +708,34 @@ class BookBlock:
         page = Page(settings)
         self._page = page
 
-    def debug(self, message):
-        if self._settings.get_debug_mode():
-            print("DEBUG [BookBlock] {}".format(message))
-
     def reset(self):
         self._pages.reset()
 
     def get_previous_page(self):
 
         page_spec = self._pages.get_previous_page()
-        self.debug(">>> page_spec: {}".format(page_spec))
+        Logger.debug("BookBlock: page_spec: {}".format(page_spec))
         self._pages.print_current_page()
         page = self._page.get(page_spec)
-        self.debug(">>> type(page): {}".format(type(page)))
+        Logger.debug("BookBlock: type(page): {}".format(type(page)))
         return page
 
     def get_current_page(self):
 
         page_spec = self._pages.get_current_page()
-        self.debug(">>> page_spec: {}".format(page_spec))
+        Logger.debug("BookBlock: page_spec: {}".format(page_spec))
         self._pages.print_current_page()
         page = self._page.get(page_spec)
-        self.debug(">>> type(page): {}".format(type(page)))
+        Logger.debug("BookBlock: type(page): {}".format(type(page)))
         return page
 
     def get_next_page(self):
 
         page_spec = self._pages.get_next_page()
-        self.debug(">>> page_spec: {}".format(page_spec))
+        Logger.debug("BookBlock: page_spec: {}".format(page_spec))
         self._pages.print_current_page()
         page = self._page.get(page_spec)
-        self.debug(">>> type(page): {}".format(type(page)))
+        Logger.debug("BookBlock: type(page): {}".format(type(page)))
         return page
 
     def is_first_page(self):
@@ -802,9 +776,6 @@ class BookBlock:
 class BookBlockApp(App):
 
     def __init__(self, settings):
-
-
-        
         self._settings = settings
 
         # Book block image server
@@ -812,10 +783,6 @@ class BookBlockApp(App):
         self._image_server = bookblock
         return super(BookBlockApp, self).__init__()
         
-    def debug(self, message):
-        if self._settings.get_debug_mode():
-            print("DEBUG [BookBlockApp] {}".format(message))
-
     def get_create_config_dir(self):
         """
         Return the config dir.  If it does not exist, create it.
@@ -827,7 +794,7 @@ class BookBlockApp(App):
 
         # Ensure that config directory exists
         if not config_dir.exists():
-            self.debug("Creating config directlry: {}".format(config_dir_name))
+            Logger.debug("BookBlockApp: Creating config directlry: {}".format(config_dir_name))
             config_dir.mkdir(parents=True, exist_ok=True)
 
         # Return config dir
@@ -878,7 +845,7 @@ class BookBlockApp(App):
         config = self.config
         log_dir    = config.get('logger', 'log_dir')
         log_name   = config.get('logger', 'log_name')
-        log_level  = LOG_LEVELS.get(config.get('logger', 'log_level'))
+        log_level  = config.get('logger', 'log_level')
         log_enable = config.getint('logger', 'log_enable')
         #| log_maxfiles = config.getint('logger', 'log_maxfiles')
 
@@ -912,8 +879,27 @@ class BookBlockApp(App):
         FileHandler.fd = open(log_file, 'w')
         log_messages.append('Logger: Record log in %s' % log_file)
 
+        # Log level
+        # Command line option --debug overwrites settings
+        log_level_option = self._settings.get_debug_level()
+        if log_level_option != None:
+            log_level = log_level_option
+
+        # Convert to logging debug level
+        log_level_code = LOG_LEVELS.get(log_level.lower())
+
+        # When log_level is not one of 
+        # trace, debug, info, warning, error, critical, 
+        # None is returned.
+        if log_level_code == None:
+            log_levels = ['trace', 'debug', 'info', 'warning', 'error', 'critical']
+            print("ERROR Undefined log level: {}\n".format(log_level) +
+                  "Defined are only the following: {}.".format(', '.join(log_levels)),
+                  file=sys.stderr)
+            exit(-1)
+
         # Set log level
-        Logger.setLevel(log_level)
+        Logger.setLevel(log_level_code)
 
         # En- / Disable logger
         Logger.logfile_activated = bool(log_enable)
@@ -1112,14 +1098,14 @@ class BookBlockApp(App):
             self._next_button.disabled = False
 
     def previous_image(self, instance):
-        self.debug('The button <%s> has been pressed' % instance.text)
+        Logger.debug('BookBlockApp: The button <%s> has been pressed' % instance.text)
 
         img_file = self._image_server.get_previous_page()
         self.show_image(img_file)
         self.update_button_states()
 
     def next_image(self, instance):
-        self.debug('The button <%s> has been pressed' % instance.text)
+        Logger.debug('BookBlockApp: The button <%s> has been pressed' % instance.text)
 
         img_file = self._image_server.get_next_page()
         self.show_image(img_file)
@@ -1148,7 +1134,7 @@ class BookBlockApp(App):
         self.redraw_image()
 
     def apply(self, instance):
-        self.debug('The button <%s> has been pressed' % instance.text)
+        Logger.debug('BookBlockApp: The button <%s> has been pressed' % instance.text)
 
         print("Generating pages:")
         self._image_server.store_pages()

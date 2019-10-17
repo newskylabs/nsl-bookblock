@@ -22,7 +22,7 @@ class Settings:
     def __init__(self):
 
         # Defaults
-        self._debug              = False
+        self._debug_level        = None
         self._mode               = 'bb'
         self._image_mode         = 'color'
         self._view_mode          = 'scan'
@@ -51,8 +51,8 @@ class Settings:
 
     ## Setters
 
-    def set_debug_mode(self, debug):
-        self._debug = debug
+    def set_debug_level(self, debug_level):
+        self._debug_level = debug_level
 
     def set_mode(self, mode):
         self._mode = mode
@@ -83,8 +83,8 @@ class Settings:
 
     ## Getters
 
-    def get_debug_mode(self):
-        return self._debug
+    def get_debug_level(self):
+        return self._debug_level
 
     def get_mode(self):
         return self._mode
