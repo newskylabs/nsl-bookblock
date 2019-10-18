@@ -10,7 +10,8 @@ __copyright__   = "Copyright 2019 Dietrich Bollmann"
 __license__     = "Apache License 2.0, http://www.apache.org/licenses/LICENSE-2.0"
 __date__        = "2019/10/18"
 
-import re
+import sys, re
+
 from pathlib import Path, PosixPath
 
 from kivy.logger import Logger
