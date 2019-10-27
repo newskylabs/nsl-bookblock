@@ -138,6 +138,30 @@ def bookblock(source_dir, target_dir,
               debug):
     """Cut out pages from book scans.
     """
+    
+    # Resetting `sys.argv':
+    # 
+    # The bookblock command line options disturb Kivy:
+    # See file site-packages/kivy/__init__.py :
+    # 
+    #     try:
+    #         opts, args = getopt(sys_argv[1:], 'hp:fkawFem:sr:dc:', [
+    #             'help', 'fullscreen', 'windowed', 'fps', 'event',
+    #             'module=', 'save', 'fake-fullscreen', 'auto-fullscreen',
+    #             'multiprocessing-fork', 'display=', 'size=', 'rotate=',
+    #             'config=', 'debug', 'dpi='])
+    # 
+    #     except GetoptError as err:
+    #         Logger.error('Core: %s' % str(err))
+    #         kivy_usage()
+    # 
+    # Example: the option `--source-dir <dir>' causes the following error:
+    # 
+    #   Core: option --source-dir not recognized
+    # 
+    # Therefore only options relevant for Kivy should be 
+    # contained in sys.argv when starting to deal with Kivy code:
+    sys.argv = [ sys.argv[1] ]
 
     if debug in ['trace', 'debug', 'info']:
         print("DEBUG bookblock:")
